@@ -141,3 +141,4 @@ bp-derive = { git = "https://github.com/BP-WG/bp-std" }
 descriptors = { git = "https://github.com/BP-WG/bp-std" }
 psbt = { git = "https://github.com/BP-WG/bp-std" }
 bp-std = { git = "https://github.com/BP-WG/bp-std" }
+rgb-std = { path = "../rgb-std" }
