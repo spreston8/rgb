@@ -406,8 +406,10 @@ impl Args {
                 psbt: psbt_filename,
                 consignment: consignment_path,
             } => {
-                let mut runtime = self.runtime(wallet);
-                // TODO: sync wallet if needed
+                let mut wallet_opts = wallet.clone();
+                wallet_opts.sync = true;  // 🛠️ FIX: Enable sync to populate memory UTXO system
+                let mut runtime = self.runtime(&wallet_opts);
+                // 🛠️ FIXED: Wallet will now sync and populate UTXOs before payment
                 // TODO: Add params and giveway to arguments
                 let params = TxParams::with(*fee);
                 let (mut psbt, payment) = runtime.pay_invoice(invoice, *strategy, params, *sats)?;

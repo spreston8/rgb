@@ -388,11 +388,10 @@ dependencies = [
 [[package]]
 name = "bp-derive"
 version = "0.12.0-rc.3"
-source = "git+https://github.com/BP-WG/bp-std#256d8214acf66bcaace28ad499513d31dc3d06f9"
 dependencies = [
  "amplify",
  "bp-consensus",
- "bp-invoice",
+ "bp-invoice 0.12.0-rc.3",
  "commit_verify",
  "hmac",
  "indexmap 2.10.0",
@@ -422,12 +421,10 @@ dependencies = [
 [[package]]
 name = "bp-esplora"
 version = "0.12.0-rc.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65d9fd7f000e54a7a0719c1bdcdba80c7c96d2d90f499465c920a928fb495670"
 dependencies = [
  "amplify",
  "bp-core",
- "bp-invoice",
+ "bp-invoice 0.12.0-rc.3 (git+https://github.com/BP-WG/bp-std)",
  "log",
  "minreq",
  "reqwest",
@@ -435,6 +432,17 @@ dependencies = [
  "serde_with 3.14.0",
  "sha2",
  "tokio",
+]
+
+[[package]]
+name = "bp-invoice"
+version = "0.12.0-rc.3"
+dependencies = [
+ "amplify",
+ "bech32",
+ "bp-consensus",
+ "commit_verify",
+ "serde",
 ]
 
 [[package]]
@@ -471,13 +479,12 @@ dependencies = [
 [[package]]
 name = "bp-std"
 version = "0.12.0-rc.3"
-source = "git+https://github.com/BP-WG/bp-std#256d8214acf66bcaace28ad499513d31dc3d06f9"
 dependencies = [
  "amplify",
  "bp-consensus",
  "bp-core",
  "bp-derive",
- "bp-invoice",
+ "bp-invoice 0.12.0-rc.3",
  "descriptors",
  "getrandom 0.2.16",
  "getrandom 0.3.3",
@@ -763,7 +770,6 @@ dependencies = [
 [[package]]
 name = "descriptors"
 version = "0.12.0-rc.3"
-source = "git+https://github.com/BP-WG/bp-std#256d8214acf66bcaace28ad499513d31dc3d06f9"
 dependencies = [
  "amplify",
  "bp-derive",
@@ -1715,7 +1721,6 @@ dependencies = [
 [[package]]
 name = "psbt"
 version = "0.12.0-rc.3"
-source = "git+https://github.com/BP-WG/bp-std#256d8214acf66bcaace28ad499513d31dc3d06f9"
 dependencies = [
  "amplify",
  "base64",
@@ -1928,7 +1933,7 @@ dependencies = [
  "amplify",
  "baid64",
  "bp-core",
- "bp-invoice",
+ "bp-invoice 0.12.0-rc.3 (git+https://github.com/BP-WG/bp-std)",
  "commit_verify",
  "hypersonic",
  "rgb-core",
@@ -1973,6 +1978,7 @@ dependencies = [
  "futures",
  "getrandom 0.2.16",
  "getrandom 0.3.3",
+ "hex",
  "indexmap 2.10.0",
  "log",
  "rand 0.9.1",
@@ -1997,7 +2003,7 @@ dependencies = [
  "aora",
  "binfile",
  "bp-core",
- "bp-invoice",
+ "bp-invoice 0.12.0-rc.3 (git+https://github.com/BP-WG/bp-std)",
  "chrono",
  "commit_verify",
  "getrandom 0.2.16",
@@ -3464,3 +3470,18 @@ dependencies = [
  "strict_encoding",
  "wasm-bindgen",
 ]
+
+[[patch.unused]]
+name = "bp-derive"
+version = "0.12.0-rc.3"
+source = "git+https://github.com/BP-WG/bp-std#256d8214acf66bcaace28ad499513d31dc3d06f9"
+
+[[patch.unused]]
+name = "descriptors"
+version = "0.12.0-rc.3"
+source = "git+https://github.com/BP-WG/bp-std#256d8214acf66bcaace28ad499513d31dc3d06f9"
+
+[[patch.unused]]
+name = "psbt"
+version = "0.12.0-rc.3"
+source = "git+https://github.com/BP-WG/bp-std#256d8214acf66bcaace28ad499513d31dc3d06f9"

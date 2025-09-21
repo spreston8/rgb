@@ -108,21 +108,26 @@ impl Resolver for EsploraResolver {
         iter: impl IntoIterator<Item = (Terminal, ScriptPubkey)>,
     ) -> impl Iterator<Item = Result<Utxo, ResolverError>> {
         iter.into_iter()
-            .flat_map(|(terminal, spk)| match self.0.scripthash_utxo(&spk) {
-                Err(err) => vec![Err(ResolverError::from(err))],
-                Ok(list) => list
-                    .into_iter()
-                    .map(|utxo| {
-                        Ok(Utxo {
-                            outpoint: Outpoint::new(
-                                utxo.txid,
-                                Vout::from_u32(utxo.vout.value as u32),
-                            ),
-                            value: Sats::from_sats(utxo.value),
-                            terminal,
-                        })
-                    })
-                    .collect::<Vec<_>>(),
+            .flat_map(|(terminal, spk)| {
+                match self.0.scripthash_utxo(&spk) {
+                    Err(err) => {
+                        vec![Err(ResolverError::from(err))]
+                    },
+                    Ok(list) => {
+                        list.into_iter()
+                            .map(|utxo| {
+                                Ok(Utxo {
+                                    outpoint: Outpoint::new(
+                                        utxo.txid,
+                                        Vout::from_u32(utxo.vout),  // Fixed: vout is now u32 directly
+                                    ),
+                                    value: Sats::from_sats(utxo.value),
+                                    terminal,
+                                })
+                            })
+                            .collect::<Vec<_>>()
+                    }
+                }
             })
     }
 
@@ -153,14 +158,18 @@ impl Resolver for EsploraAsyncResolver {
         let mut utxos = Vec::new();
         for (terminal, spk) in iter {
             match self.0.scripthash_utxo(&spk).await {
-                Err(err) => utxos.push(Err(ResolverError::from(err))),
-                Ok(list) => utxos.extend(list.into_iter().map(|utxo| {
-                    Ok(Utxo {
-                        outpoint: Outpoint::new(utxo.txid, Vout::from_u32(utxo.vout.value as u32)),
-                        value: Sats::from_sats(utxo.value),
-                        terminal,
-                    })
-                })),
+                Err(err) => {
+                    utxos.push(Err(ResolverError::from(err)))
+                },
+                Ok(list) => {
+                    utxos.extend(list.into_iter().map(|utxo| {
+                        Ok(Utxo {
+                            outpoint: Outpoint::new(utxo.txid, Vout::from_u32(utxo.vout)),  // Fixed: vout is now u32 directly
+                            value: Sats::from_sats(utxo.value),
+                            terminal,
+                        })
+                    }))
+                }
             }
         }
         utxos.into_iter()

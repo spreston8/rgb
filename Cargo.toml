@@ -19,9 +19,11 @@ strict_encoding = "2.9.1"
 strict_types = "2.9.0"
 commit_verify = "0.12.0"
 bp-core = "0.12.0"
-bp-std = { version = "0.12.0-rc.3", features = ["client-side-validation"] }
+# bp-std = { version = "0.12.0-rc.3", features = ["client-side-validation"] }
+bp-std = { path = "../bp-std", features = ["client-side-validation"] }
 bp-electrum = { version = "0.12.0-rc.1" }
-bp-esplora = { version = "0.12.0-rc.3", default-features = false }
+# bp-esplora = { version = "0.12.0-rc.3", default-features = false }
+bp-esplora = { path = "../bp-esplora-local", default-features = false }
 rgb-std = { version = "0.12.0-rc.3" }
 rgb-runtime = { version = "0.12.0-rc.3", path = "." }
 rgb-psbt = { version = "0.12.0-rc.3", path = "psbt" }
@@ -70,6 +72,7 @@ chrono = { workspace = true }
 serde = { workspace = true, optional = true }
 toml = { workspace = true, optional = true }
 log = { workspace = true, optional = true }
+hex = "0.4"
 
 [dev-dependencies]
 toml.workspace = true
@@ -140,4 +143,4 @@ bp-invoice = { git = "https://github.com/BP-WG/bp-std" }
 bp-derive = { git = "https://github.com/BP-WG/bp-std" }
 descriptors = { git = "https://github.com/BP-WG/bp-std" }
 psbt = { git = "https://github.com/BP-WG/bp-std" }
-bp-std = { git = "https://github.com/BP-WG/bp-std" }
+# bp-std = { git = "https://github.com/BP-WG/bp-std" }

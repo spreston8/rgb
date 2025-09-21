@@ -67,18 +67,23 @@ impl Resolver for ElectrumResolver {
         iter: impl IntoIterator<Item = (Terminal, ScriptPubkey)>,
     ) -> impl Iterator<Item = Result<Utxo, ResolverError>> {
         iter.into_iter()
-            .flat_map(|(terminal, spk)| match self.0.script_list_unspent(&spk) {
-                Err(err) => vec![Err(ResolverError::from(err))],
-                Ok(list) => list
-                    .into_iter()
-                    .map(|res| {
-                        Ok(Utxo {
-                            outpoint: Outpoint::new(res.tx_hash, res.tx_pos as u32),
-                            value: Sats::from_sats(res.value),
-                            terminal,
-                        })
-                    })
-                    .collect::<Vec<_>>(),
+            .flat_map(|(terminal, spk)| {
+                match self.0.script_list_unspent(&spk) {
+                    Err(err) => {
+                        vec![Err(ResolverError::from(err))]
+                    },
+                    Ok(list) => {
+                        list.into_iter()
+                            .map(|res| {
+                                Ok(Utxo {
+                                    outpoint: Outpoint::new(res.tx_hash, res.tx_pos as u32),
+                                    value: Sats::from_sats(res.value),
+                                    terminal,
+                                })
+                            })
+                            .collect::<Vec<_>>()
+                    }
+                }
             })
     }
 
