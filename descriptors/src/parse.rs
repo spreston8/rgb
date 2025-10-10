@@ -28,7 +28,7 @@ use core::fmt::Display;
 use core::num::ParseIntError;
 use core::str::FromStr;
 
-use amplify::{hex, Bytes32};
+use amplify::{hex::{self, FromHex}, Array, Bytes32};
 use bpstd::compiler::{check_forms, DescrAst, DescrExpr, DescrParseError, NoKey, ScriptExpr};
 use bpstd::dbc::tapret::TapretCommitment;
 use bpstd::seals::{Noise, TxoSealExt, WOutpoint, WTxoSeal};
@@ -109,11 +109,16 @@ impl SealDescr {
                     .map_err(|e| DescrParseError::Expr("seal", e))?;
                 TxoSealExt::Fallback(fallback)
             } else {
-                TxoSealExt::Noise(
-                    Noise::from_str(sec)
-                        .map_err(|_| SealParseError::InvalidNoise(sec.to_owned()))
-                        .map_err(|e| DescrParseError::Expr("seal", e))?,
-                )
+                // Parse 40-byte (80 hex chars) noise value
+                let vec = Vec::<u8>::from_hex(sec)
+                    .map_err(|_| SealParseError::InvalidNoise(sec.to_owned()))
+                    .map_err(|e| DescrParseError::Expr("seal", e))?;
+                let arr: [u8; 40] = vec
+                    .try_into()
+                    .map_err(|_| SealParseError::InvalidNoise(sec.to_owned()))
+                    .map_err(|e| DescrParseError::Expr("seal", e))?;
+                let bytes = Array::<u8, 40>::from(arr);
+                TxoSealExt::Noise(Noise::from(bytes))
             };
             let seal = WTxoSeal { primary, secondary };
             set.insert(seal);

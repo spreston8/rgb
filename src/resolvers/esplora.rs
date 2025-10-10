@@ -188,12 +188,6 @@ impl Resolver for EsploraAsyncResolver {
 impl From<EsploraError> for ResolverError {
     fn from(err: EsploraError) -> Self {
         match err {
-            #[cfg(feature = "async")]
-            EsploraError::Reqwest(_) => ResolverError::Connectivity,
-
-            #[cfg(not(feature = "async"))]
-            EsploraError::Minreq(_) => ResolverError::Connectivity,
-
             EsploraError::InvalidHttpHeaderName(_) | EsploraError::InvalidHttpHeaderValue(_) => {
                 ResolverError::Connectivity
             }
@@ -206,6 +200,9 @@ impl From<EsploraError> for ResolverError {
             | EsploraError::Hex(_) => ResolverError::Protocol,
 
             EsploraError::TransactionNotFound(_) => ResolverError::Logic,
+            
+            // Catch any HTTP client errors (Reqwest, Minreq, or future additions)
+            _ => ResolverError::Connectivity,
         }
     }
 }
