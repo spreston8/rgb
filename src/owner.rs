@@ -254,8 +254,8 @@ where
             let mut index = NormalIndex::ZERO;
             let last_index = self.provider.utxos().next_index_noshift(keychain);
             let mut empty_batches = 0; // Track consecutive empty batches
-            let max_empty_batches = 5; // Allow up to 5 consecutive empty batches (100 addresses)
-            let min_scan_index = NormalIndex::try_from_index(100).expect("100 is a valid index"); // Always scan at least first 100 addresses
+            let max_empty_batches = 1; // BIP44 standard: stop after 1 empty batch (20 addresses)
+            let min_scan_index = NormalIndex::try_from_index(20).expect("20 is a valid index"); // BIP44 standard gap limit
             
             loop {
                 let Some(to) = index.checked_add(20u16) else {
@@ -325,8 +325,8 @@ where
             let mut index = NormalIndex::ZERO;
             let last_index = self.provider.utxos().next_index_noshift(keychain);
             let mut empty_batches = 0; // Track consecutive empty batches
-            let max_empty_batches = 5; // Allow up to 5 consecutive empty batches (100 addresses)
-            let min_scan_index = NormalIndex::try_from_index(100).expect("100 is a valid index"); // Always scan at least first 100 addresses
+            let max_empty_batches = 1; // BIP44 standard: stop after 1 empty batch (20 addresses)
+            let min_scan_index = NormalIndex::try_from_index(20).expect("20 is a valid index"); // BIP44 standard gap limit
             
             loop {
                 let Some(to) = index.checked_add(20u16) else {

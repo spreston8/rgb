@@ -1514,6 +1514,7 @@ checksum = "84885312a86831bff4a3cb04a1e54a3f698407e3274c83249313f194d3e0b678"
 dependencies = [
  "base64",
  "log",
+ "native-tls",
  "rustls 0.21.12",
  "rustls-webpki 0.101.7",
  "serde",
