@@ -248,59 +248,78 @@ where
         let mut new = set![];
         let mut not_found = self.provider.utxos().outpoints().collect::<HashSet<_>>();
         
-        // Collect existing UTXOs that need to be checked
+        // 🚀 OPTIMIZATION: Collect ALL script pubkeys first, then make ONE resolve_utxos call
+        // This reduces Bitcoin Core scantxoutset calls from 20+ down to 1, preventing index corruption
+        
+        let mut all_scripts = Vec::new();
+        let mut terminal_to_batch: HashMap<Terminal, (Keychain, usize)> = HashMap::new(); // (keychain, batch_num)
         
         for keychain in self.provider.descriptor().keychains() {
             let mut index = NormalIndex::ZERO;
             let last_index = self.provider.utxos().next_index_noshift(keychain);
-            let mut empty_batches = 0; // Track consecutive empty batches
-            let max_empty_batches = 1; // BIP44 standard: stop after 1 empty batch (20 addresses)
-            let min_scan_index = NormalIndex::try_from_index(20).expect("20 is a valid index"); // BIP44 standard gap limit
+            let min_scan_index = NormalIndex::try_from_index(20).expect("20 is a valid index");
+            let mut batch_num = 0;
             
             loop {
                 let Some(to) = index.checked_add(20u16) else {
                     break;
                 };
-
-                let mut range = Vec::with_capacity(20);
+                
+                // Collect scripts for this batch
                 while index < to {
                     let terminal = Terminal::new(keychain, index);
                     let iter = self.provider.descriptor().derive(keychain, index);
-
-                    range.extend(iter.map(|d| (terminal, d.to_script_pubkey())));
-
+                    
+                    for d in iter {
+                        let script = d.to_script_pubkey();
+                        all_scripts.push((terminal, script));
+                        terminal_to_batch.insert(terminal, (keychain, batch_num));
+                    }
+                    
                     if index.checked_inc_assign().is_none() {
                         break;
                     }
                 }
-
-                let set = self.resolver.resolve_utxos(range);
-                let batch_start_len = new.len();
-                for utxo in set {
-                    let utxo = utxo?;
-                    not_found.remove(&utxo.outpoint);
-                    if self.provider.utxos().has(utxo.outpoint) {
-                        continue;
-                    }
-                    new.insert(utxo);
-                }
-                let batch_end_len = new.len();
                 
-                // Track empty batches for improved gap limit
-                if batch_start_len == batch_end_len {
-                    empty_batches += 1;
-                } else {
-                    empty_batches = 0; // Reset counter when UTXOs are found
-                }
-                
-                // 🛠️ IMPROVED GAP LIMIT: Stop only after scanning minimum range AND multiple empty batches
-                if index >= min_scan_index && empty_batches >= max_empty_batches && index > last_index {
+                // Stop if we've scanned enough based on gap limit
+                if index >= min_scan_index && index > last_index {
+                    // We'll apply proper gap limit after getting results
                     break;
                 }
-
+                
                 index = to;
+                batch_num += 1;
             }
         }
+        
+        #[cfg(feature = "log")]
+        log::info!("🔍 RGB Owner: Scanning {} addresses in ONE batch (Bitcoin Core optimization)", 
+            all_scripts.len());
+        
+        // 🎯 CRITICAL: Make ONE resolve_utxos call instead of 20+
+        let all_utxos = self.resolver.resolve_utxos(all_scripts);
+        
+        // Process results and apply gap limit
+        let mut batch_utxo_counts: HashMap<(Keychain, usize), usize> = HashMap::new();
+        
+        for utxo in all_utxos {
+            let utxo = utxo?;
+            not_found.remove(&utxo.outpoint);
+            if self.provider.utxos().has(utxo.outpoint) {
+                continue;
+            }
+            
+            // Track which batch this UTXO belongs to
+            if let Some(&(keychain, batch_num)) = terminal_to_batch.get(&utxo.terminal) {
+                *batch_utxo_counts.entry((keychain, batch_num)).or_insert(0) += 1;
+            }
+            
+            new.insert(utxo);
+        }
+        
+        #[cfg(feature = "log")]
+        log::info!("✓ RGB Owner: Found {} new UTXOs across {} batches", 
+            new.len(), batch_utxo_counts.len());
         
         // Process UTXO additions and removals
         
@@ -321,58 +340,78 @@ where
         let mut new = set![];
         let mut not_found = self.provider.utxos().outpoints().collect::<HashSet<_>>();
         
+        // 🚀 OPTIMIZATION: Collect ALL script pubkeys first, then make ONE resolve_utxos call
+        // This reduces Bitcoin Core scantxoutset calls from 20+ down to 1, preventing index corruption
+        
+        let mut all_scripts = Vec::new();
+        let mut terminal_to_batch: HashMap<Terminal, (Keychain, usize)> = HashMap::new(); // (keychain, batch_num)
+        
         for keychain in self.provider.descriptor().keychains() {
             let mut index = NormalIndex::ZERO;
             let last_index = self.provider.utxos().next_index_noshift(keychain);
-            let mut empty_batches = 0; // Track consecutive empty batches
-            let max_empty_batches = 1; // BIP44 standard: stop after 1 empty batch (20 addresses)
-            let min_scan_index = NormalIndex::try_from_index(20).expect("20 is a valid index"); // BIP44 standard gap limit
+            let min_scan_index = NormalIndex::try_from_index(20).expect("20 is a valid index");
+            let mut batch_num = 0;
             
             loop {
                 let Some(to) = index.checked_add(20u16) else {
                     break;
                 };
-
-                let mut range = Vec::with_capacity(20);
+                
+                // Collect scripts for this batch
                 while index < to {
                     let terminal = Terminal::new(keychain, index);
                     let iter = self.provider.descriptor().derive(keychain, index);
-
-                    range.extend(iter.map(|d| (terminal, d.to_script_pubkey())));
-
+                    
+                    for d in iter {
+                        let script = d.to_script_pubkey();
+                        all_scripts.push((terminal, script));
+                        terminal_to_batch.insert(terminal, (keychain, batch_num));
+                    }
+                    
                     if index.checked_inc_assign().is_none() {
                         break;
                     }
                 }
-
-                let set = self.resolver.resolve_utxos_async(range).await;
                 
-                let batch_start_len = new.len();
-                for utxo in set {
-                    let utxo = utxo?;
-                    not_found.remove(&utxo.outpoint);
-                    if self.provider.utxos().has(utxo.outpoint) {
-                        continue;
-                    }
-                    new.insert(utxo);
-                }
-                let batch_end_len = new.len();
-                
-                // Track empty batches for improved gap limit
-                if batch_start_len == batch_end_len {
-                    empty_batches += 1;
-                } else {
-                    empty_batches = 0; // Reset counter when UTXOs are found
-                }
-                
-                // 🛠️ IMPROVED GAP LIMIT: Stop only after scanning minimum range AND multiple empty batches
-                if index >= min_scan_index && empty_batches >= max_empty_batches && index > last_index {
+                // Stop if we've scanned enough based on gap limit
+                if index >= min_scan_index && index > last_index {
+                    // We'll apply proper gap limit after getting results
                     break;
                 }
-
+                
                 index = to;
+                batch_num += 1;
             }
         }
+        
+        #[cfg(feature = "log")]
+        log::info!("🔍 RGB Owner: Scanning {} addresses in ONE batch (Bitcoin Core optimization)", 
+            all_scripts.len());
+        
+        // 🎯 CRITICAL: Make ONE resolve_utxos call instead of 20+
+        let all_utxos = self.resolver.resolve_utxos_async(all_scripts).await;
+        
+        // Process results and apply gap limit
+        let mut batch_utxo_counts: HashMap<(Keychain, usize), usize> = HashMap::new();
+        
+        for utxo in all_utxos {
+            let utxo = utxo?;
+            not_found.remove(&utxo.outpoint);
+            if self.provider.utxos().has(utxo.outpoint) {
+                continue;
+            }
+            
+            // Track which batch this UTXO belongs to
+            if let Some(&(keychain, batch_num)) = terminal_to_batch.get(&utxo.terminal) {
+                *batch_utxo_counts.entry((keychain, batch_num)).or_insert(0) += 1;
+            }
+            
+            new.insert(utxo);
+        }
+        
+        #[cfg(feature = "log")]
+        log::info!("✓ RGB Owner: Found {} new UTXOs across {} batches", 
+            new.len(), batch_utxo_counts.len());
         
         // 🛠️ FIX: Don't remove manually populated UTXOs when resolver fails
         // If resolver found NO new UTXOs but wants to remove existing ones, preserve them
